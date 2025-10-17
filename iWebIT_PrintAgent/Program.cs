@@ -1,24 +1,18 @@
 using System;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-
+using System.ServiceProcess;
 
 namespace iWebIT_PrintAgent
 {
-public class Program
-{
-public static void Main(string[] args)
-{
-var host = Host.CreateDefaultBuilder(args)
-.UseWindowsService() // run as windows service when installed
-.ConfigureServices((context, services) =>
-{
-services.AddHostedService<PrintService>();
-})
-.Build();
-
-
-host.Run();
-}
-}
+    internal static class Program
+    {
+        static void Main()
+        {
+            ServiceBase[] ServicesToRun;
+            ServicesToRun = new ServiceBase[]
+            {
+                new WindowsPrintService()
+            };
+            ServiceBase.Run(ServicesToRun);
+        }
+    }
 }

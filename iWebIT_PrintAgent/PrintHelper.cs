@@ -1,70 +1,63 @@
 using System;
+using System.Drawing;
+using System.Drawing.Printing;
+using System.IO;
+using System.Diagnostics;
 
-if (root["status"]?.ToString()?.ToLower() == "ok")
+namespace iWebIT_PrintAgent
 {
-    var jobs = root["jobs"];
-    if (jobs != null)
+    public static class PrintHelper
     {
-
-        foreach (var job in jobs)
+        // Imprime uma imagem diretamente
+        public static void PrintImage(string filePath, string printerName)
         {
-            string fileUrl = job["file_url"]?.ToString() ?? string.Empty;
-            string printerName = job["printer_name"]?.ToString() ?? string.Empty;
-            string jobId = job["job_id"]?.ToString() ?? string.Empty;
+            if (!File.Exists(filePath))
+                throw new FileNotFoundException("Ficheiro não encontrado: " + filePath);
 
-
-                if (string.IsNullOrWhiteSpace(fileUrl) || string.IsNullOrWhiteSpace(printerName))
+            using (Image image = Image.FromFile(filePath))
             {
-                WriteLog("Job missing file_url or printer_name.");
-                continue;
+                PrintDocument printDoc = new PrintDocument();
+                printDoc.PrinterSettings.PrinterName = printerName;
+                printDoc.DocumentName = Path.GetFileName(filePath);
+
+                printDoc.PrintPage += (sender, e) =>
+                {
+                    Rectangle marginBounds = e.MarginBounds;
+                    e.Graphics.DrawImage(image, marginBounds);
+                };
+
+                printDoc.Print();
             }
+        }
 
+        // Imprime PDFs via SumatraPDF (opcional)
+        public static void PrintPdf(string filePath, string printerName, string sumatraPath)
+        {
+            if (!File.Exists(filePath)) throw new FileNotFoundException(filePath);
+            if (!File.Exists(sumatraPath)) throw new FileNotFoundException(sumatraPath);
 
-            WriteLog($"Received job {jobId}: {fileUrl} -> {printerName}");
-
-
-            string tempFile = Path.Combine(_tempFolder, Path.GetFileName(new Uri(fileUrl).LocalPath));
-            try
+            var psi = new ProcessStartInfo
             {
-                wc.DownloadFile(fileUrl, tempFile);
-                PrintHelper.PrintFile(tempFile, printerName, _sumatraPath);
-                WriteLog($"Job {jobId} printed.");
+                FileName = sumatraPath,
+                Arguments = $"-print-to \"{printerName}\" -silent \"{filePath}\"",
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
 
-
-                // notify API (simple GET/POST depending on your API)
-            try
+            using (var process = Process.Start(psi))
             {
-                var response = wc.UploadString(_apiConfirmUrl, "POST", $"id={jobId}&status=done");
-                WriteLog($"API confirm response for {jobId}: {response}");
+                process?.WaitForExit(30000);
             }
-            catch (Exception ex)
-            {
-                WriteLog($"Error confirming job {jobId}: {ex.Message}");
-            }
-            }   
-            catch (Exception ex)
-            {
-                WriteLog($"Error processing job {jobId}: {ex.Message}");
-            }
-            finally
-            {
-                try { File.Delete(tempFile);} catch {}
-            }
-        }   
+        }
+
+        // Detecta o tipo de ficheiro e imprime automaticamente
+        public static void PrintFile(string filePath, string printerName, string sumatraPath)
+        {
+            string ext = Path.GetExtension(filePath).ToLowerInvariant();
+            if (ext == ".pdf")
+                PrintPdf(filePath, printerName, sumatraPath);
+            else
+                PrintImage(filePath, printerName);
+        }
     }
-}
-else
-{
-// not ok, nothing to do
-}
-
-
-
-private void WriteLog(string message)
-{
-try
-{
-File.AppendAllText(_logPath, $"[{DateTime.Now}] {message}\\r\\n");
-}
-catch { }
 }

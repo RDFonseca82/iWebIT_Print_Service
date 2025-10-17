@@ -1,55 +1,95 @@
 using System;
-using System.Diagnostics;
 using System.IO;
-using System.Runtime.InteropServices;
-
+using System.Net;
+using Newtonsoft.Json.Linq;
 
 namespace iWebIT_PrintAgent
 {
-public static class PrintHelper
-{
-public static void PrintFile(string filePath, string printerName, string sumatraPath)
-{
-if (filePath.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
-{
-if (!File.Exists(sumatraPath))
-throw new FileNotFoundException("SumatraPDF not found at " + sumatraPath);
+    public class PrintService
+    {
+        private readonly string _tempFolder;
+        private readonly string _logPath;
+        private readonly string _sumatraPath;
+        private readonly string _apiConfirmUrl;
 
+        public PrintService(string tempFolder, string logPath, string sumatraPath, string apiConfirmUrl)
+        {
+            _tempFolder = tempFolder;
+            _logPath = logPath;
+            _sumatraPath = sumatraPath;
+            _apiConfirmUrl = apiConfirmUrl;
 
-var psi = new ProcessStartInfo
-{
-FileName = sumatraPath,
-Arguments = $"-print-to \"{printerName}\" -silent \"{filePath}\"",
-CreateNoWindow = true,
-UseShellExecute = false
-};
+            if (!Directory.Exists(_tempFolder))
+                Directory.CreateDirectory(_tempFolder);
+        }
 
+        public void ProcessJobs(string json)
+        {
+            try
+            {
+                var root = JObject.Parse(json);
+                if (root["status"]?.ToString().ToLower() != "ok") return;
 
-using (var p = Process.Start(psi))
-{
-if (p != null)
-{
-p.WaitForExit(30000); // wait up to 30s
-}
-}
-}
-else
-{
-// Try generic PrintTo verb (works for many document types if associated app supports it)
-var psi = new ProcessStartInfo
-{
-FileName = filePath,
-Verb = "PrintTo",
-Arguments = $"\"{printerName}\"",
-CreateNoWindow = true,
-UseShellExecute = true
-};
+                var jobs = root["jobs"];
+                if (jobs == null) return;
 
+                using (var wc = new WebClient())
+                {
+                    foreach (var job in jobs)
+                    {
+                        string fileUrl = job["file_url"]?.ToString() ?? "";
+                        string printerName = job["printer_name"]?.ToString() ?? "";
+                        string jobId = job["job_id"]?.ToString() ?? "";
 
-Process proc = Process.Start(psi)!;
-// don't block too long
-proc.WaitForExit(15000);
-}
-}
-}
+                        if (string.IsNullOrWhiteSpace(fileUrl) || string.IsNullOrWhiteSpace(printerName))
+                        {
+                            WriteLog($"Job {jobId} inválido.");
+                            continue;
+                        }
+
+                        WriteLog($"Recebido job {jobId}: {fileUrl} -> {printerName}");
+
+                        string tempFile = Path.Combine(_tempFolder, Path.GetFileName(new Uri(fileUrl).LocalPath));
+                        try
+                        {
+                            wc.DownloadFile(fileUrl, tempFile);
+                            PrintHelper.PrintFile(tempFile, printerName, _sumatraPath);
+                            WriteLog($"Job {jobId} impresso.");
+
+                            try
+                            {
+                                var response = wc.UploadString(_apiConfirmUrl, "POST", $"id={jobId}&status=done");
+                                WriteLog($"Confirmação API {jobId}: {response}");
+                            }
+                            catch (Exception ex)
+                            {
+                                WriteLog($"Erro confirmar job {jobId}: {ex.Message}");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            WriteLog($"Erro processar job {jobId}: {ex.Message}");
+                        }
+                        finally
+                        {
+                            try { File.Delete(tempFile); } catch { }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                WriteLog("Erro geral: " + ex.Message);
+            }
+        }
+
+        private void WriteLog(string message)
+        {
+            try
+            {
+                File.AppendAllText(_logPath, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}{Environment.NewLine}");
+            }
+            catch { }
+        }
+    }
 }

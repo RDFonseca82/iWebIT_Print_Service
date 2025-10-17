@@ -1,0 +1,49 @@
+name: Build Windows Service and Installer
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 6.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore src/iWebIT_PrintAgent.csproj
+
+      - name: Build
+        run: dotnet build src/iWebIT_PrintAgent.csproj -c Release --no-restore
+
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+
+      - name: Build Installer
+        run: |
+          "C:\\Program Files (x86)\\Inno Setup 6\\ISCC.exe" installer\\iWebIT_PrintAgent.iss
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: iWebIT_PrintAgent_Setup
+          path: installer\\Output\\iWebIT_PrintAgent_Setup.exe
+
+      - name: Publish Release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: installer\\Output\\iWebIT_PrintAgent_Setup.exe
+          tag_name: v${{ github.run_number }}
+          name: "iWebIT Print Agent Build ${{ github.run_number }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

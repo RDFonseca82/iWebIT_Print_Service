@@ -17,7 +17,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 6.0.x
+          dotnet-version: 8.0.x
 
       - name: Restore dependencies
         run: dotnet restore iWebIT_PrintAgent/iWebIT_PrintAgent.csproj
@@ -29,20 +29,19 @@ jobs:
         run: choco install innosetup --no-progress -y
 
       - name: Build Installer
-        run: |
-          "C:\\Program Files (x86)\\Inno Setup 6\\ISCC.exe" installer\\iWebIT_PrintAgent.iss
+        run: '"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\iWebIT_PrintAgent.iss'
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: iWebIT_PrintAgent_Setup
-          path: installer\\Output\\iWebIT_PrintAgent_Setup.exe
+          path: installer\Output\iWebIT_PrintAgent_Setup.exe
 
       - name: Publish Release
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          files: installer\\Output\\iWebIT_PrintAgent_Setup.exe
+          files: installer\Output\iWebIT_PrintAgent_Setup.exe
           tag_name: v${{ github.run_number }}
           name: "iWebIT Print Agent Build ${{ github.run_number }}"
         env:

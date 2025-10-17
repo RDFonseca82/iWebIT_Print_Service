@@ -1,5 +1,6 @@
-using System;
-using System.ServiceProcess;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace iWebIT_PrintAgent
 {
@@ -7,12 +8,20 @@ namespace iWebIT_PrintAgent
     {
         static void Main()
         {
-            ServiceBase[] ServicesToRun;
-            ServicesToRun = new ServiceBase[]
-            {
-                new WindowsPrintService()
-            };
-            ServiceBase.Run(ServicesToRun);
+            IHost host = Host.CreateDefaultBuilder()
+                .UseWindowsService()
+                .ConfigureAppConfiguration((context, config) =>
+                {
+                    config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+                })
+                .ConfigureServices((context, services) =>
+                {
+                    services.AddSingleton<WindowsPrintService>();
+                    services.AddHostedService(provider => provider.GetRequiredService<WindowsPrintService>());
+                })
+                .Build();
+
+            host.Run();
         }
     }
 }

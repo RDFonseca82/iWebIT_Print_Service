@@ -44,3 +44,43 @@ sc start iWebIT_PrintAgent
 - **Impressoras:** o nome de `printer_name` recebido no JSON tem de corresponder exatamente ao nome da impressora instalada no servidor/estação onde o serviço corre.
 - **SumatraPDF:** recomendado para PDFs. Para outros tipos, o método `PrintTo` depende das associações de ficheiro instaladas e das aplicações presentes.
 - **Debug:** verificar `C:\ProgramData\iWebIT_PrintAgent\log.txt`.
+
+
+PHP API GetJobs
+<?php
+// getjobs.php
+header('Content-Type: application/json');
+
+$jobs = [
+    [
+        'file_url' => 'https://example.com/file1.jpg',
+        'printer_name' => 'MinhaImpressora',
+        'job_id' => '123'
+    ],
+    [
+        'file_url' => 'https://example.com/file2.png',
+        'printer_name' => 'MinhaImpressora',
+        'job_id' => '124'
+    ]
+];
+
+echo json_encode([
+    'status' => 'ok',
+    'jobs' => $jobs
+]);
+?>
+
+PHP API Config Jobs
+
+<?php
+// confirm.php
+$id = $_POST['id'] ?? null;
+$status = $_POST['status'] ?? null;
+
+if ($id && $status) {
+    // Atualiza DB ou log do job
+    echo "Job $id marcado como $status";
+} else {
+    echo "Dados inválidos";
+}
+?>

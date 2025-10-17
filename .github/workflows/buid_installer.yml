@@ -11,32 +11,47 @@ jobs:
     runs-on: windows-latest
 
     steps:
+      # 1️⃣ Checkout do código
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      # 2️⃣ Instalar .NET 8
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
 
+      # 3️⃣ Restaurar dependências
       - name: Restore dependencies
         run: dotnet restore iWebIT_PrintAgent/iWebIT_PrintAgent.csproj
 
+      # 4️⃣ Build do projeto
       - name: Build
         run: dotnet build iWebIT_PrintAgent/iWebIT_PrintAgent.csproj -c Release --no-restore
 
+      # 5️⃣ Publicar build self-contained (para x64)
+      - name: Publish project
+        run: dotnet publish iWebIT_PrintAgent/iWebIT_PrintAgent.csproj -c Release -r win-x64 --self-contained true -o publish
+
+      # 6️⃣ Instalar Inno Setup
       - name: Install Inno Setup
         run: choco install innosetup --no-progress -y
+        shell: pwsh
 
+      # 7️⃣ Build do instalador
       - name: Build Installer
-        run: '"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\iWebIT_PrintAgent.iss'
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "installer\iWebIT_PrintAgent.iss"
+        shell: pwsh
 
+      # 8️⃣ Upload do instalador como artifact
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: iWebIT_PrintAgent_Setup
           path: installer\Output\iWebIT_PrintAgent_Setup.exe
 
+      # 9️⃣ Publicar release automático
       - name: Publish Release
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2

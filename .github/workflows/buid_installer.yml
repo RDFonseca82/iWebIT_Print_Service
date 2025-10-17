@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: write  # necessário para criar release
+
 jobs:
   build:
     runs-on: windows-latest
@@ -41,7 +44,8 @@ jobs:
       # 7️⃣ Build do instalador
       - name: Build Installer
         run: |
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "installer\iWebIT_PrintAgent.iss"
+          $issPath = Join-Path $PWD "installer\iWebIT_PrintAgent.iss"
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" $issPath
         shell: pwsh
 
       # 8️⃣ Upload do instalador como artifact
@@ -49,14 +53,14 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: iWebIT_PrintAgent_Setup
-          path: installer\Output\iWebIT_PrintAgent_Setup.exe
+          path: installer/Output/iWebIT_PrintAgent_Setup.exe
 
       # 9️⃣ Publicar release automático
       - name: Publish Release
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          files: installer\Output\iWebIT_PrintAgent_Setup.exe
+          files: installer/Output/iWebIT_PrintAgent_Setup.exe
           tag_name: v${{ github.run_number }}
           name: "iWebIT Print Agent Build ${{ github.run_number }}"
         env:

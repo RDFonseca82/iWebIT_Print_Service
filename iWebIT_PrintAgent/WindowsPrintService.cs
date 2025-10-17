@@ -10,7 +10,7 @@ namespace iWebIT_PrintAgent
 {
     public class WindowsPrintService : IHostedService, IDisposable
     {
-        private Timer _timer;
+        private System.Threading.Timer _timer;
         private PrintService _printService;
         private readonly string _tempFolder;
         private readonly string _logPath;
@@ -38,7 +38,7 @@ namespace iWebIT_PrintAgent
         public Task StartAsync(CancellationToken cancellationToken)
         {
             WriteLog("WindowsPrintService iniciado.");
-            _timer = new Timer(ProcessJobs, null, TimeSpan.Zero, TimeSpan.FromSeconds(_pollingIntervalSeconds));
+            _timer = new System.Threading.Timer(ProcessJobs, null, TimeSpan.Zero, TimeSpan.FromSeconds(_pollingIntervalSeconds));
             return Task.CompletedTask;
         }
 

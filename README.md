@@ -18,6 +18,20 @@
 2. Abra um prompt como Administrador e execute:
 
 
+## API JSON
+
+{
+  "status": "ok",
+  "jobs": [
+    {
+      "file_url": "https://seudominio.com/printjobs/12345.pdf",
+      "printer_name": "HP LaserJet 400 M401",
+      "job_id": 12345
+    }
+  ]
+}
+
+
 ```powershell
 sc create iWebIT_PrintAgent binPath= "\"C:\Program Files\iWebIT_PrintAgent\iWebIT_PrintAgent.exe\"" start= auto
 sc description iWebIT_PrintAgent "iWebIT Print Agent - polls API and prints jobs"

@@ -3,7 +3,7 @@
 #define MyAppVersion "1.0.0"
 #define MyAppPublisher "iWebIT"
 #define MyAppDirName "iWebIT_PrintAgent"
-#define MyAppDir "C:\Program Files\iWebIT_PrintAgent"
+#define MyAppDir "{pf}\iWebIT_PrintAgent"
 
 [Setup]
 AppName={#MyAppName}
@@ -23,10 +23,14 @@ ArchitecturesInstallIn64BitMode=x64
 Source: "..\iWebIT_PrintAgent\bin\Release\net8.0-windows\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
 
 [Run]
-Filename: "sc.exe"; Parameters: "create iWebIT_PrintAgent binPath= \"{app}\{#MyAppExeName}\" start= auto"; Flags: runhidden waituntilterminated
-Filename: "sc.exe"; Parameters: "description iWebIT_PrintAgent \"{#MyAppName} - imprime trabalhos automaticamente\""; Flags: runhidden waituntilterminated
+; Criar o serviço
+Filename: "sc.exe"; Parameters: "create iWebIT_PrintAgent binPath= ""{app}\{#MyAppExeName}"" start= auto"; Flags: runhidden waituntilterminated
+; Adicionar descrição
+Filename: "sc.exe"; Parameters: "description iWebIT_PrintAgent ""{#MyAppName} - imprime trabalhos automaticamente"""; Flags: runhidden waituntilterminated
+; Iniciar serviço
 Filename: "sc.exe"; Parameters: "start iWebIT_PrintAgent"; Flags: runhidden waituntilterminated
 
 [UninstallRun]
+; Parar e remover serviço
 Filename: "sc.exe"; Parameters: "stop iWebIT_PrintAgent"; Flags: runhidden waituntilterminated
 Filename: "sc.exe"; Parameters: "delete iWebIT_PrintAgent"; Flags: runhidden waituntilterminated

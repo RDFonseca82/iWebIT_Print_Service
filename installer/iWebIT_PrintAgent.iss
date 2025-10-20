@@ -20,7 +20,7 @@ UninstallDisplayIcon={app}\{#MyAppExeName}
 ArchitecturesInstallIn64BitMode=x64
 
 [Files]
-Source: "..\iWebIT_PrintAgent\bin\Release\net8.0-windows\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
+Source: "..\iWebIT_PrintAgent\bin\Release\net8.0-windows\win-x64\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
 
 [Run]
 ; Criar o serviço

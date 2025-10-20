@@ -16,11 +16,11 @@ SolidCompression=yes
 PrivilegesRequired=admin
 WizardStyle=modern
 UninstallDisplayIcon={app}\{#MyAppExeName}
-;SetupIconFile=icon.ico
 ArchitecturesInstallIn64BitMode=x64
 
 [Files]
-Source: "..\iWebIT_PrintAgent\bin\Release\net8.0-windows\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
+; Copia diretamente o conteúdo publicado (sem win-x64)
+Source: "..\iWebIT_PrintAgent\bin\Release\net8.0-windows\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
 
 [Run]
 ; Criar o serviço

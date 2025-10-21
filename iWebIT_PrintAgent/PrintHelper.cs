@@ -13,22 +13,34 @@ namespace iWebIT_PrintAgent
         {
             if (!File.Exists(filePath))
                 throw new FileNotFoundException("Ficheiro não encontrado: " + filePath);
-
+        
             using (Image image = Image.FromFile(filePath))
             {
                 PrintDocument printDoc = new PrintDocument();
                 printDoc.PrinterSettings.PrinterName = printerName;
                 printDoc.DocumentName = Path.GetFileName(filePath);
-
+        
                 printDoc.PrintPage += (sender, e) =>
                 {
-                    Rectangle marginBounds = e.MarginBounds;
-                    e.Graphics.DrawImage(image, marginBounds);
+                    // Usa PageBounds para ocupar toda a página
+                    var pageWidth = e.PageBounds.Width;
+                    var pageHeight = e.PageBounds.Height;
+        
+                    // Mantém proporção da imagem
+                    float scale = Math.Min((float)pageWidth / image.Width, (float)pageHeight / image.Height);
+                    int drawWidth = (int)(image.Width * scale);
+                    int drawHeight = (int)(image.Height * scale);
+        
+                    int posX = (pageWidth - drawWidth) / 2;
+                    int posY = (pageHeight - drawHeight) / 2;
+        
+                    e.Graphics.DrawImage(image, posX, posY, drawWidth, drawHeight);
                 };
-
+        
                 printDoc.Print();
             }
         }
+
 
         // Imprime PDFs via SumatraPDF (opcional)
         public static void PrintPdf(string filePath, string printerName, string sumatraPath)

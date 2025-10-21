@@ -20,26 +20,36 @@ namespace iWebIT_PrintAgent
                 printDoc.PrinterSettings.PrinterName = printerName;
                 printDoc.DocumentName = Path.GetFileName(filePath);
         
+                // Força impressão em paisagem
+                printDoc.DefaultPageSettings.Landscape = true;
+        
                 printDoc.PrintPage += (sender, e) =>
                 {
-                    // Usa PageBounds para ocupar toda a página
+                    Image imgToPrint = (Image)image.Clone();
+        
+                    // Rotaciona imagem vertical para horizontal
+                    if (imgToPrint.Height > imgToPrint.Width)
+                        imgToPrint.RotateFlip(RotateFlipType.Rotate90FlipNone);
+        
                     var pageWidth = e.PageBounds.Width;
                     var pageHeight = e.PageBounds.Height;
         
-                    // Mantém proporção da imagem
-                    float scale = Math.Min((float)pageWidth / image.Width, (float)pageHeight / image.Height);
-                    int drawWidth = (int)(image.Width * scale);
-                    int drawHeight = (int)(image.Height * scale);
+                    float scale = Math.Min((float)pageWidth / imgToPrint.Width, (float)pageHeight / imgToPrint.Height);
+                    int drawWidth = (int)(imgToPrint.Width * scale);
+                    int drawHeight = (int)(imgToPrint.Height * scale);
         
                     int posX = (pageWidth - drawWidth) / 2;
                     int posY = (pageHeight - drawHeight) / 2;
         
-                    e.Graphics.DrawImage(image, posX, posY, drawWidth, drawHeight);
+                    e.Graphics.DrawImage(imgToPrint, posX, posY, drawWidth, drawHeight);
+        
+                    imgToPrint.Dispose();
                 };
         
                 printDoc.Print();
             }
         }
+
 
 
         // Imprime PDFs via SumatraPDF (opcional)
